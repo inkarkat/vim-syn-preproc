@@ -55,24 +55,22 @@ endif
 " special workarounds to after/syntax/preproc.vim. 
 "
 "syn cluster preprocNativeComment contains=ovfpComment
-"syn cluster preprocNativeCommentGroup contains=@ovfpCommentGroup
-function! s:AddToCluster( syntax, bareGroup, isCluster )
+function! s:AddToCluster( syntax, bareGroup )
     let l:syntaxGroup = a:syntax . a:bareGroup
-    " Cannot check for existence of syntax clusters with hlID(). 
-    "if hlID(l:syntaxGroup)
-    execute 'syn cluster preprocNative' . a:bareGroup 'add=' . (a:isCluster ? '@' : '') . l:syntaxGroup
-    echomsg 'syn cluster preprocNative' . a:bareGroup 'add=' . (a:isCluster ? '@' : '') . l:syntaxGroup
+    if hlID(l:syntaxGroup)
+	execute 'syn cluster preprocNative' . a:bareGroup 'add=' . l:syntaxGroup
+echomsg 'syn cluster preprocNative' . a:bareGroup 'add=' . l:syntaxGroup
+    endif
 endfunction
 function! s:IncludeNativeComments()
     for l:syntax in split(b:current_syntax, '\.')
-	call s:AddToCluster(l:syntax, 'Comment', 0)
-	"call s:AddToCluster(l:syntax, 'CommentGroup', 1)
+	call s:AddToCluster(l:syntax, 'Comment')
     endfor
 endfunction
 if exists('b:current_syntax')
     " Note: I would be nice to also check whether &comments =~# ':#', but the
     " ftplugin script is only sourced after the syntax script! 
-    call s:IncludeNativeComments()
+    "call s:IncludeNativeComments()
 endif
 
 
@@ -80,8 +78,11 @@ syn region	preprocIncluded	display start=+"+ skip=+\\\\\|\\"+ end=+"+ contained
 syn match	preprocIncluded	display "<[^>]*>" contained
 syn match	preprocInclude	display "^\s*\%(%:\|#\)\s*include\>\s*["<]" contains=preprocIncluded
 syn cluster	preprocPreProcGroup	contains=preprocIncluded,preprocInclude,preprocDefine
-syn region	preprocDefine		start="^\s*\%(%:\|#\)\s*\(define\|undef\)\>" skip="\\$" end="$" keepend containedin=@preprocNativeCommentGroup contains=ALLBUT,@preprocNativeComment,@preprocPreProcGroup,@Spell
-syn region	preprocPreProc		start="^\s*\%(%:\|#\)\s*\(pragma\>\|line\>\|warning\>\|warn\>\|error\>\)" skip="\\$" end="$" keepend containedin=@preprocNativeCommentGroup contains=ALLBUT,@preprocNativeComment,@preprocPreProcGroup,@Spell
+
+" Use matchgroup here to have the preprocessor directive always highlighted as
+" such, regardless of any native matching after that. 
+syn region	preprocDefine		matchgroup=preprocDefine start="^\s*\%(%:\|#\)\s*\(define\|undef\)\>" skip="\\$" end="$" keepend contains=ALLBUT,@preprocNativeComment,@preprocPreProcGroup,@Spell
+syn region	preprocPreProc		matchgroup=preprocPreProc start="^\s*\%(%:\|#\)\s*\(pragma\>\|line\>\|warning\>\|warn\>\|error\>\)" skip="\\$" end="$" keepend contains=ALLBUT,@preprocNativeComment,@preprocPreProcGroup,@Spell
 
 syn region	preprocPreCondit	start="^\s*\(%:\|#\)\s*\(if\|ifdef\|ifndef\|elif\)\>" skip="\\$" end="$" end="//"me=s-1
 syn match	preprocPreCondit	display "^\s*\(%:\|#\)\s*\(else\|endif\)\>"
