@@ -1,6 +1,20 @@
 " Vim syntax extension file
 " Language:	C preprocessor syntax on top of c, cpp, ...
 " Maintainer:	Ingo Karkat <ingo@karkat.de>
+"
+" CONFIGURATION:
+"   To turn off folding of #if ... #endif conditions, use: 
+"	:let preproc_no_fold_conditions = 1
+"   Lines commented out via #if 0 will still be folded. To turn that of, too,
+"   use: 
+"	:let preproc_no_if0_fold = 1
+"   To completely turn off highlighting (as comments) of #if 0 blocks, use: 
+"	:let preproc_no_if0 = 1
+"
+" NOTES:
+"   This script supports both the normal "#..." syntax as well as the
+"   alternative "%:..." digraph (or alternative token) for the '#' punctuator. 
+"
 " REVISION	DATE		REMARKS 
 "	001	24-Mar-2010	file creation
 
@@ -21,52 +35,54 @@ syn region	preprocPreProc		start="^\s*\%(%:\|#\)\s*\(pragma\>\|line\>\|warning\>
 syn region	preprocPreCondit	start="^\s*\(%:\|#\)\s*\(if\|ifdef\|ifndef\|elif\)\>" skip="\\$" end="$" end="//"me=s-1
 syn match	preprocPreCondit	display "^\s*\(%:\|#\)\s*\(else\|endif\)\>"
 if ! exists('preproc_no_if0')
-  if ! exists('preproc_no_if0_fold')
-    syn region	preprocCppOut		start="^\s*\(%:\|#\)\s*if\s\+0\+\>" end=".\@=\|$" contains=preprocCppOut2 fold
-  else
-    syn region	preprocCppOut		start="^\s*\(%:\|#\)\s*if\s\+0\+\>" end=".\@=\|$" contains=preprocCppOut2
-  endif
-  syn region	preprocCppOut2	contained start="0" end="^\s*\(%:\|#\)\s*\(endif\>\|else\>\|elif\>\)" contains=preprocCppSkip
-  syn region	preprocCppSkip	contained start="^\s*\(%:\|#\)\s*\(if\>\|ifdef\>\|ifndef\>\)" skip="\\$" end="^\s*\(%:\|#\)\s*endif\>" contains=preprocCppSkip
+    if ! exists('preproc_no_if0_fold') && exists('preproc_no_fold_conditions')
+	syn region	preprocCppOut		start="^\s*\(%:\|#\)\s*if\s\+0\+\>" end=".\@=\|$" contains=preprocCppOut2 fold
+    else
+	syn region	preprocCppOut		start="^\s*\(%:\|#\)\s*if\s\+0\+\>" end=".\@=\|$" contains=preprocCppOut2
+    endif
+    syn region	preprocCppOut2	contained start="0" end="^\s*\(%:\|#\)\s*\(endif\>\|else\>\|elif\>\)" contains=preprocCppSkip
+    syn region	preprocCppSkip	contained start="^\s*\(%:\|#\)\s*\(if\>\|ifdef\>\|ifndef\>\)" skip="\\$" end="^\s*\(%:\|#\)\s*endif\>" contains=preprocCppSkip
 endif
 
 
-" Source: http://groups.google.com/group/vim_use/browse_thread/thread/49ed223185b6cb07
-" fold #if...#else...#endif constructs
-syn region preprocIfFoldContainer
-    \ start="^\s*\%(%:\|#\)\s*if\(n\?def\)\?\>"
-    \ end="#\s*endif\>"
-    \ skip=+"\%(\\"\|[^"]\)\{-}\\\@<!"\|'[^']\{-}'\|'\\''\|//.*+
-    \ transparent
-    \ keepend extend
-    \ containedin=NONE
-    \ contains=preprocSynFoldIf,preprocSynFoldElif,preprocSynFoldElse
-syn region preprocSynFoldIf
-    \ start="^\s*\%(%:\|#\)\s*if\(n\?def\)\?\>"
-    \ end="^\s*\%(%:\|#\)\s*el\(se\|if\)\>"ms=s-1,me=s-1
-    \ skip=+"\%(\\"\|[^"]\)\{-}\\\@<!"\|'[^']\{-}'\|'\\''\|//.*+
-    \ fold transparent
-    \ keepend
-    \ contained
-    \ nextgroup=preprocSynFoldElif,preprocSynFoldElse
-    \ contains=TOP
-syn region preprocSynFoldElif
-    \ start="^\s*\%(%:\|#\)\s*elif\>"
-    \ end="^\s*\%(%:\|#\)\s*el\(se\|if\)\>"ms=s-1,me=s-1
-    \ skip=+"\%(\\"\|[^"]\)\{-}\\\@<!"\|'[^']\{-}'\|'\\''\|//.*+
-    \ fold transparent
-    \ keepend
-    \ contained
-    \ nextgroup=preprocSynFoldElse
-    \ contains=TOP
-syn region preprocSynFoldElse
-    \ start="^\s*\%(%:\|#\)\s*else\>"
-    \ end="^\s*\%(%:\|#\)\s*endif\>"
-    \ skip=+"\%(\\"\|[^"]\)\{-}\\\@<!"\|'[^']\{-}'\|'\\''\|//.*+
-    \ fold transparent
-    \ keepend
-    \ contained
-    \ contains=TOP 
+if ! exists('preproc_no_fold_conditions')
+    " Source: http://groups.google.com/group/vim_use/browse_thread/thread/49ed223185b6cb07
+    " fold #if...#else...#endif constructs
+    syn region preprocIfFoldContainer
+	\ start="^\s*\%(%:\|#\)\s*if\(n\?def\)\?\>"
+	\ end="#\s*endif\>"
+	\ skip=+"\%(\\"\|[^"]\)\{-}\\\@<!"\|'[^']\{-}'\|'\\''\|//.*+
+	\ transparent
+	\ keepend extend
+	\ containedin=NONE
+	\ contains=preprocSynFoldIf,preprocSynFoldElif,preprocSynFoldElse
+    syn region preprocSynFoldIf
+	\ start="^\s*\%(%:\|#\)\s*if\(n\?def\)\?\>"
+	\ end="^\s*\%(%:\|#\)\s*el\(se\|if\)\>"ms=s-1,me=s-1
+	\ skip=+"\%(\\"\|[^"]\)\{-}\\\@<!"\|'[^']\{-}'\|'\\''\|//.*+
+	\ fold transparent
+	\ keepend
+	\ contained
+	\ nextgroup=preprocSynFoldElif,preprocSynFoldElse
+	\ contains=TOP
+    syn region preprocSynFoldElif
+	\ start="^\s*\%(%:\|#\)\s*elif\>"
+	\ end="^\s*\%(%:\|#\)\s*el\(se\|if\)\>"ms=s-1,me=s-1
+	\ skip=+"\%(\\"\|[^"]\)\{-}\\\@<!"\|'[^']\{-}'\|'\\''\|//.*+
+	\ fold transparent
+	\ keepend
+	\ contained
+	\ nextgroup=preprocSynFoldElse
+	\ contains=TOP
+    syn region preprocSynFoldElse
+	\ start="^\s*\%(%:\|#\)\s*else\>"
+	\ end="^\s*\%(%:\|#\)\s*endif\>"
+	\ skip=+"\%(\\"\|[^"]\)\{-}\\\@<!"\|'[^']\{-}'\|'\\''\|//.*+
+	\ fold transparent
+	\ keepend
+	\ contained
+	\ contains=TOP 
+endif
 
 
 hi def link preprocDefine	Macro
