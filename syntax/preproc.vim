@@ -51,21 +51,27 @@ endif
 " must use the actual syntax group; otherwise, the recursive inclusion will
 " cancel itself out (?!) and the native comment highlighting will prevail.  
 "
+" Some scripts are not that well-behaved; for those filetypes, we can add
+" special workarounds to after/syntax/preproc.vim. 
+"
 "syn cluster preprocNativeComment contains=ovfpComment
 "syn cluster preprocNativeCommentGroup contains=@ovfpCommentGroup
-function! s:AddToCluster( syntax, bareGroup )
+function! s:AddToCluster( syntax, bareGroup, isCluster )
     let l:syntaxGroup = a:syntax . a:bareGroup
     " Cannot check for existence of syntax clusters with hlID(). 
     "if hlID(l:syntaxGroup)
-    execute 'syn cluster preprocNative' . a:bareGroup 'add=' . l:syntaxGroup
+    execute 'syn cluster preprocNative' . a:bareGroup 'add=' . (a:isCluster ? '@' : '') . l:syntaxGroup
+    echomsg 'syn cluster preprocNative' . a:bareGroup 'add=' . (a:isCluster ? '@' : '') . l:syntaxGroup
 endfunction
 function! s:IncludeNativeComments()
     for l:syntax in split(b:current_syntax, '\.')
-	call s:AddToCluster(l:syntax, 'Comment')
-	call s:AddToCluster(l:syntax, 'CommentGroup')
+	call s:AddToCluster(l:syntax, 'Comment', 0)
+	"call s:AddToCluster(l:syntax, 'CommentGroup', 1)
     endfor
 endfunction
 if exists('b:current_syntax')
+    " Note: I would be nice to also check whether &comments =~# ':#', but the
+    " ftplugin script is only sourced after the syntax script! 
     call s:IncludeNativeComments()
 endif
 
