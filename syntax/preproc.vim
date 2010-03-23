@@ -30,15 +30,52 @@ if exists('b:current_syntax') && b:current_syntax =~# 'preproc'
     finish
 endif
 
-"syn cluster preprocNativeComments contains=ovfpComment
+
+" Many filetypes have comments that start with a # and go until the end of the
+" line: Unix shell, Perl, Unix config files, ...
+" The corresponding syntax file will then define a syntax group for comments,
+" and our preprocessor definitions then will never match, because our groups are
+" not included in theirs. The same happens the other way around: Our
+" preprocDefine and preprocPreProc groups include all existing syntax groups
+" (e.g. to continue highlighting C keywords in a complex, multi-line C macro),
+" but their comment group may override our highlighting for the preprocessor
+" keyword. 
+" If the syntax file defines a {filetype}CommentGroup syntax cluster to add
+" custom highlighting inside comments (a common idiom), we can add our
+" groups via the preprocNativeCommentGroup cluster to it and have thus our
+" preprocessor stuff matched. 
+" If the syntax file uses standard naming {filetype}Comment for their comments,
+" we can add it to our preprocNativeComment cluster, and thus avoid that their
+" comment overrides our highlighting of the preprocessor directive. 
+" Note that we cannot use their {filetype}CommentGroup for the latter one, but
+" must use the actual syntax group; otherwise, the recursive inclusion will
+" cancel itself out (?!) and the native comment highlighting will prevail.  
+"
+"syn cluster preprocNativeComment contains=ovfpComment
 "syn cluster preprocNativeCommentGroup contains=@ovfpCommentGroup
+function! s:AddToCluster( syntax, bareGroup )
+    let l:syntaxGroup = a:syntax . a:bareGroup
+    " Cannot check for existence of syntax clusters with hlID(). 
+    "if hlID(l:syntaxGroup)
+    execute 'syn cluster preprocNative' . a:bareGroup 'add=' . l:syntaxGroup
+endfunction
+function! s:IncludeNativeComments()
+    for l:syntax in split(b:current_syntax, '\.')
+	call s:AddToCluster(l:syntax, 'Comment')
+	call s:AddToCluster(l:syntax, 'CommentGroup')
+    endfor
+endfunction
+if exists('b:current_syntax')
+    call s:IncludeNativeComments()
+endif
+
 
 syn region	preprocIncluded	display start=+"+ skip=+\\\\\|\\"+ end=+"+ contained
 syn match	preprocIncluded	display "<[^>]*>" contained
 syn match	preprocInclude	display "^\s*\%(%:\|#\)\s*include\>\s*["<]" contains=preprocIncluded
 syn cluster	preprocPreProcGroup	contains=preprocIncluded,preprocInclude,preprocDefine
-syn region	preprocDefine		start="^\s*\%(%:\|#\)\s*\(define\|undef\)\>" skip="\\$" end="$" keepend containedin=@preprocNativeCommentGroup contains=ALLBUT,@preprocNativeComments,@preprocPreProcGroup,@Spell
-syn region	preprocPreProc		start="^\s*\%(%:\|#\)\s*\(pragma\>\|line\>\|warning\>\|warn\>\|error\>\)" skip="\\$" end="$" keepend containedin=@preprocNativeCommentGroup contains=ALLBUT,@preprocNativeComments,@preprocPreProcGroup,@Spell
+syn region	preprocDefine		start="^\s*\%(%:\|#\)\s*\(define\|undef\)\>" skip="\\$" end="$" keepend containedin=@preprocNativeCommentGroup contains=ALLBUT,@preprocNativeComment,@preprocPreProcGroup,@Spell
+syn region	preprocPreProc		start="^\s*\%(%:\|#\)\s*\(pragma\>\|line\>\|warning\>\|warn\>\|error\>\)" skip="\\$" end="$" keepend containedin=@preprocNativeCommentGroup contains=ALLBUT,@preprocNativeComment,@preprocPreProcGroup,@Spell
 
 syn region	preprocPreCondit	start="^\s*\(%:\|#\)\s*\(if\|ifdef\|ifndef\|elif\)\>" skip="\\$" end="$" end="//"me=s-1
 syn match	preprocPreCondit	display "^\s*\(%:\|#\)\s*\(else\|endif\)\>"
@@ -103,8 +140,8 @@ hi def link preprocCppOut2	preprocCppOut
 hi def link preprocCppOut	Comment
 
 
-if !exists('b:current_syntax')
-    let b:current_syntax = "preproc"
+if ! exists('b:current_syntax')
+    let b:current_syntax = 'preproc'
 else
     let b:current_syntax .= '.preproc'
 endif
