@@ -2,6 +2,14 @@
 " Language:	C preprocessor syntax on top of c, cpp, ...
 " Maintainer:	Ingo Karkat <ingo@karkat.de>
 "
+" DESCRIPTION:
+"   This syntax extension highlights C preprocessor directives and (optionally)
+"   folds preprocessor conditions. 
+"
+" USAGE:
+"   To add the highlighting to the file's existing syntax, use: 
+"	:setf <C-R>=&filetype<CR>.preproc
+"
 " CONFIGURATION:
 "   To turn off folding of #if ... #endif conditions, use: 
 "	:let preproc_no_fold_conditions = 1
@@ -22,11 +30,11 @@ if exists('b:current_syntax') && b:current_syntax =~# 'preproc'
     finish
 endif
 
-syn cluster preprocNativeComments contains=ovfpComment
-syn cluster preprocNativeCommentGroup contains=@ovfpCommentGroup
+"syn cluster preprocNativeComments contains=ovfpComment
+"syn cluster preprocNativeCommentGroup contains=@ovfpCommentGroup
 
-syn region	preprocIncluded	display start=+"+ skip=+\\\\\|\\"+ end=+"+
-syn match	preprocIncluded	display "<[^>]*>"
+syn region	preprocIncluded	display start=+"+ skip=+\\\\\|\\"+ end=+"+ contained
+syn match	preprocIncluded	display "<[^>]*>" contained
 syn match	preprocInclude	display "^\s*\%(%:\|#\)\s*include\>\s*["<]" contains=preprocIncluded
 syn cluster	preprocPreProcGroup	contains=preprocIncluded,preprocInclude,preprocDefine
 syn region	preprocDefine		start="^\s*\%(%:\|#\)\s*\(define\|undef\)\>" skip="\\$" end="$" keepend containedin=@preprocNativeCommentGroup contains=ALLBUT,@preprocNativeComments,@preprocPreProcGroup,@Spell
@@ -40,7 +48,7 @@ if ! exists('preproc_no_if0')
     else
 	syn region	preprocCppOut		start="^\s*\(%:\|#\)\s*if\s\+0\+\>" end=".\@=\|$" contains=preprocCppOut2
     endif
-    syn region	preprocCppOut2	contained start="0" end="^\s*\(%:\|#\)\s*\(endif\>\|else\>\|elif\>\)" contains=preprocCppSkip
+    syn region	preprocCppOut2	contained start="^\s*\(%:\|#\)\s*if\s\+\zs0" end="^\s*\(%:\|#\)\s*\(endif\>\|else\>\|elif\>\)" contains=preprocCppSkip
     syn region	preprocCppSkip	contained start="^\s*\(%:\|#\)\s*\(if\>\|ifdef\>\|ifndef\>\)" skip="\\$" end="^\s*\(%:\|#\)\s*endif\>" contains=preprocCppSkip
 endif
 
@@ -81,7 +89,7 @@ if ! exists('preproc_no_fold_conditions')
 	\ fold transparent
 	\ keepend
 	\ contained
-	\ contains=TOP 
+	\ contains=TOP
 endif
 
 
