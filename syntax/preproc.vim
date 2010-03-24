@@ -11,6 +11,16 @@
 "	:setf <C-R>=&filetype<CR>.preproc
 "
 " CONFIGURATION:
+"   C/C++-style comments are typically removed by the preprocessor and thus
+"   highlighted as other comments. You can define a different highlighting if
+"   you want to visually distinguish them from the default comments of that
+"   filetype: 
+"	hi link preprocComment NonText
+"   Or turn highlighting of comments off: 
+"	let preproc_no_comments = 1
+"   Multi-line C-style comments are folded; if you do not want this, use: 
+"	let preproc_no_comment_fold = 1
+"
 "   To turn off folding of #if ... #endif conditions, use: 
 "	:let preproc_no_fold_conditions = 1
 "   Lines commented out via #if 0 will still be folded. To turn that of, too,
@@ -24,6 +34,7 @@
 "   alternative "%:..." digraph (or alternative token) for the '#' punctuator. 
 "
 " REVISION	DATE		REMARKS 
+"	002	25-Mar-2010	Added highlighting preprocessor comments. 
 "	001	24-Mar-2010	file creation
 
 if exists('b:current_syntax') && b:current_syntax =~# 'preproc'
@@ -40,9 +51,20 @@ syn cluster	preprocPreProcGroup	contains=preprocIncluded,preprocInclude,preprocD
 syn region	preprocDefine		matchgroup=preprocDefine start="^\s*\%(%:\|#\)\s*\(define\|undef\)\>" skip="\\$" end="$" keepend contains=ALLBUT,@preprocPreProcGroup,@Spell
 syn region	preprocPreProc		matchgroup=preprocPreProc start="^\s*\%(%:\|#\)\s*\(pragma\>\|line\>\|warning\>\|warn\>\|error\>\)" skip="\\$" end="$" keepend contains=ALLBUT,@preprocPreProcGroup,@Spell
 
-syn region	preprocPreCondit	start="^\s*\(%:\|#\)\s*\(if\|ifdef\|ifndef\|elif\)\>" skip="\\$" end="$" end="//"me=s-1
+syn region	preprocPreCondit	start="^\s*\(%:\|#\)\s*\(if\|ifdef\|ifndef\|elif\)\>" skip="\\$" end="$" end="//"me=s-1 contains=preprocCommentError
 syn match	preprocPreCondit	display "^\s*\(%:\|#\)\s*\(else\|endif\)\>"
 
+if ! exists('preproc_no_comments')
+    syn region	preprocCommentL	start="//" skip="\\$" end="$" keepend contains=@preprocCommentGroup,@Spell
+    if exists('preproc_no_comment_fold')
+	syn region	preprocComment	matchgroup=preprocCommentStart start="/\*" end="\*/" contains=@preprocCommentGroup,preprocCommentStartError,@Spell extend
+    else
+	syn region	preprocComment	matchgroup=preprocCommentStart start="/\*" end="\*/" contains=@preprocCommentGroup,preprocCommentStartError,@Spell fold extend
+    endif
+    " keep a // comment separately, it terminates a preproc. conditional
+    syntax match	preprocCommentError	display "\*/"
+    syntax match	preprocCommentStartError display "/\*"me=e-1 contained
+endif
 
 if ! exists('preproc_no_if0')
     if ! exists('preproc_no_if0_fold') && exists('preproc_no_fold_conditions')
@@ -53,7 +75,6 @@ if ! exists('preproc_no_if0')
     syn region	preprocCppOut2	contained start="^\s*\(%:\|#\)\s*if\s\+\zs0" end="^\s*\(%:\|#\)\s*\(endif\>\|else\>\|elif\>\)" contains=preprocCppSkip
     syn region	preprocCppSkip	contained start="^\s*\(%:\|#\)\s*\(if\>\|ifdef\>\|ifndef\>\)" skip="\\$" end="^\s*\(%:\|#\)\s*endif\>" contains=preprocCppSkip
 endif
-
 
 if ! exists('preproc_no_fold_conditions')
     " Source: http://groups.google.com/group/vim_use/browse_thread/thread/49ed223185b6cb07
@@ -100,6 +121,13 @@ hi def link preprocInclude	Include
 hi def link preprocIncluded	String
 hi def link preprocPreProc	PreProc
 hi def link preprocPreCondit	PreCondit
+
+hi def link preprocCommentL	preprocComment
+hi def link preprocCommentStart	preprocComment
+hi def link preprocComment	Comment
+hi def link preprocCommentError	preprocError
+hi def link preprocError	Error
+
 hi def link preprocCppSkip	preprocCppOut
 hi def link preprocCppOut2	preprocCppOut
 hi def link preprocCppOut	Comment
