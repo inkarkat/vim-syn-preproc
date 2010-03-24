@@ -30,50 +30,6 @@ if exists('b:current_syntax') && b:current_syntax =~# 'preproc'
     finish
 endif
 
-
-" Many filetypes have comments that start with a # and go until the end of the
-" line: Unix shell, Perl, Unix config files, ...
-" The corresponding syntax file will then define a syntax group for comments,
-" and our preprocessor definitions then will never match, because our groups are
-" not included in theirs. The same happens the other way around: Our
-" preprocDefine and preprocPreProc groups include all existing syntax groups
-" (e.g. to continue highlighting C keywords in a complex, multi-line C macro),
-" but their comment group may override our highlighting for the preprocessor
-" keyword. 
-" If the syntax file defines a {filetype}CommentGroup syntax cluster to add
-" custom highlighting inside comments (a common idiom), we can add our
-" groups via the preprocNativeCommentGroup cluster to it and have thus our
-" preprocessor stuff matched. 
-" If the syntax file uses standard naming {filetype}Comment for their comments,
-" we can add it to our preprocNativeComment cluster, and thus avoid that their
-" comment overrides our highlighting of the preprocessor directive. 
-" Note that we cannot use their {filetype}CommentGroup for the latter one, but
-" must use the actual syntax group; otherwise, the recursive inclusion will
-" cancel itself out (?!) and the native comment highlighting will prevail.  
-"
-" Some scripts are not that well-behaved; for those filetypes, we can add
-" special workarounds to after/syntax/preproc.vim. 
-"
-"syn cluster preprocNativeComment contains=ovfpComment
-function! s:AddToCluster( syntax, bareGroup )
-    let l:syntaxGroup = a:syntax . a:bareGroup
-    if hlID(l:syntaxGroup)
-	execute 'syn cluster preprocNative' . a:bareGroup 'add=' . l:syntaxGroup
-echomsg 'syn cluster preprocNative' . a:bareGroup 'add=' . l:syntaxGroup
-    endif
-endfunction
-function! s:IncludeNativeComments()
-    for l:syntax in split(b:current_syntax, '\.')
-	call s:AddToCluster(l:syntax, 'Comment')
-    endfor
-endfunction
-if exists('b:current_syntax')
-    " Note: I would be nice to also check whether &comments =~# ':#', but the
-    " ftplugin script is only sourced after the syntax script! 
-    "call s:IncludeNativeComments()
-endif
-
-
 syn region	preprocIncluded	display start=+"+ skip=+\\\\\|\\"+ end=+"+ contained
 syn match	preprocIncluded	display "<[^>]*>" contained
 syn match	preprocInclude	display "^\s*\%(%:\|#\)\s*include\>\s*["<]" contains=preprocIncluded
@@ -81,11 +37,13 @@ syn cluster	preprocPreProcGroup	contains=preprocIncluded,preprocInclude,preprocD
 
 " Use matchgroup here to have the preprocessor directive always highlighted as
 " such, regardless of any native matching after that. 
-syn region	preprocDefine		matchgroup=preprocDefine start="^\s*\%(%:\|#\)\s*\(define\|undef\)\>" skip="\\$" end="$" keepend contains=ALLBUT,@preprocNativeComment,@preprocPreProcGroup,@Spell
-syn region	preprocPreProc		matchgroup=preprocPreProc start="^\s*\%(%:\|#\)\s*\(pragma\>\|line\>\|warning\>\|warn\>\|error\>\)" skip="\\$" end="$" keepend contains=ALLBUT,@preprocNativeComment,@preprocPreProcGroup,@Spell
+syn region	preprocDefine		matchgroup=preprocDefine start="^\s*\%(%:\|#\)\s*\(define\|undef\)\>" skip="\\$" end="$" keepend contains=ALLBUT,@preprocPreProcGroup,@Spell
+syn region	preprocPreProc		matchgroup=preprocPreProc start="^\s*\%(%:\|#\)\s*\(pragma\>\|line\>\|warning\>\|warn\>\|error\>\)" skip="\\$" end="$" keepend contains=ALLBUT,@preprocPreProcGroup,@Spell
 
 syn region	preprocPreCondit	start="^\s*\(%:\|#\)\s*\(if\|ifdef\|ifndef\|elif\)\>" skip="\\$" end="$" end="//"me=s-1
 syn match	preprocPreCondit	display "^\s*\(%:\|#\)\s*\(else\|endif\)\>"
+
+
 if ! exists('preproc_no_if0')
     if ! exists('preproc_no_if0_fold') && exists('preproc_no_fold_conditions')
 	syn region	preprocCppOut		start="^\s*\(%:\|#\)\s*if\s\+0\+\>" end=".\@=\|$" contains=preprocCppOut2 fold
