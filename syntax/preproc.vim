@@ -41,6 +41,33 @@ if exists('b:current_syntax') && b:current_syntax =~# 'preproc'
     finish
 endif
 
+function! s:AlreadyHasCComments()
+    let l:commentGroup = 'cComment'
+
+    " Quickly check with hlID() whether the "cComment" syntax group exists
+    " globally. 
+    if hlID(l:commentGroup)
+	" Existence of the syntax group is necessary, but not yet sufficient,
+	" since this query is global, and the group could have been loaded by
+	" another buffer. To check whether this file's syntax includes the
+	" syntax group, we need to check the output of :syntax, as
+	" :syntax list {group-name} also shows non-active groups. 
+	redir => l:syntaxGroupsOutput
+	silent! syntax list
+	redir END
+	redraw	" This is necessary because of the :redir done earlier.  
+	let l:syntaxGroups = split(l:syntaxGroupsOutput, "\n")
+	let l:commentGroups = filter(l:syntaxGroups, "v:val =~# '^\\V" . escape(l:commentGroup, '\') . "'")
+	if ! empty(l:commentGroups)
+	    " The syntax group is used in the current filetype. 
+"****D echomsg '**** C/C++ style comments already defined'
+	    return 1
+	endif
+    endif
+
+    return 0
+endfunction
+
 syn region	preprocIncluded	display start=+"+ skip=+\\\\\|\\"+ end=+"+ contained
 syn match	preprocIncluded	display "<[^>]*>" contained
 syn match	preprocInclude	display "^\s*\%(%:\|#\)\s*include\>\s*["<]" contains=preprocIncluded
@@ -54,7 +81,7 @@ syn region	preprocPreProc		matchgroup=preprocPreProc start="^\s*\%(%:\|#\)\s*\(p
 syn region	preprocPreCondit	start="^\s*\(%:\|#\)\s*\(if\|ifdef\|ifndef\|elif\)\>" skip="\\$" end="$" end="//"me=s-1 contains=preprocCommentError
 syn match	preprocPreCondit	display "^\s*\(%:\|#\)\s*\(else\|endif\)\>"
 
-if ! exists('preproc_no_comments')
+if ! exists('preproc_no_comments') && ! s:AlreadyHasCComments()
     syn region	preprocCommentL	start="//" skip="\\$" end="$" keepend contains=@preprocCommentGroup,@Spell
     if exists('preproc_no_comment_fold')
 	syn region	preprocComment	matchgroup=preprocCommentStart start="/\*" end="\*/" contains=@preprocCommentGroup,preprocCommentStartError,@Spell extend
