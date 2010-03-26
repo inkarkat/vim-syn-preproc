@@ -55,7 +55,7 @@ function! s:AlreadyHasCComments()
 	redir => l:syntaxGroupsOutput
 	silent! syntax list
 	redir END
-	redraw	" This is necessary because of the :redir done earlier.  
+
 	let l:syntaxGroups = split(l:syntaxGroupsOutput, "\n")
 	let l:commentGroups = filter(l:syntaxGroups, "v:val =~# '^\\V" . escape(l:commentGroup, '\') . "'")
 	if ! empty(l:commentGroups)
