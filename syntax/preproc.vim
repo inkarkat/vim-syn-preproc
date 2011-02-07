@@ -44,9 +44,9 @@ endif
 function! s:AlreadyHasCComments()
     let l:commentGroup = 'cComment'
 
-    " Quickly check with hlID() whether the "cComment" syntax group exists
+    " Quickly check with hlexists() whether the "cComment" syntax group exists
     " globally. 
-    if hlID(l:commentGroup)
+    if hlexists(l:commentGroup)
 	" Existence of the syntax group is necessary, but not yet sufficient,
 	" since this query is global, and the group could have been loaded by
 	" another buffer. To check whether this file's syntax includes the
