@@ -53,7 +53,7 @@ function! s:AlreadyHasCComments()
 	" syntax group, we need to check the output of :syntax, as
 	" :syntax list {group-name} also shows non-active groups. 
 	redir => l:syntaxGroupsOutput
-	silent! syntax list
+	silent! syn list
 	redir END
 
 	let l:syntaxGroups = split(l:syntaxGroupsOutput, "\n")
@@ -89,8 +89,8 @@ if ! exists('preproc_no_comments') && ! s:AlreadyHasCComments()
 	syn region	preprocComment	matchgroup=preprocCommentStart start="/\*" end="\*/" contains=@preprocCommentGroup,preprocCommentStartError,@Spell fold extend
     endif
     " keep a // comment separately, it terminates a preproc. conditional
-    syntax match	preprocCommentError	display "\*/"
-    syntax match	preprocCommentStartError display "/\*"me=e-1 contained
+    syn match	preprocCommentError	display "\*/"
+    syn match	preprocCommentStartError display "/\*"me=e-1 contained
 endif
 
 if ! exists('preproc_no_if0')
