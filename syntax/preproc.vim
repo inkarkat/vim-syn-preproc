@@ -34,6 +34,11 @@
 "   alternative "%:..." digraph (or alternative token) for the '#' punctuator. 
 "
 " REVISION	DATE		REMARKS 
+"	003	10-Feb-2011	BUG: No comment highlighting of #if 0 block.
+"				Fixed by syncing with syntax/c.vim from 2009 Nov
+"				17. 
+"				FIX: Syncing also found double "end=" in
+"				preprocPreCondit. 
 "	002	25-Mar-2010	Added highlighting preprocessor comments. 
 "	001	24-Mar-2010	file creation
 
@@ -78,7 +83,7 @@ syn cluster	preprocPreProcGroup	contains=preprocIncluded,preprocInclude,preprocD
 syn region	preprocDefine		matchgroup=preprocDefine start="^\s*\%(%:\|#\)\s*\(define\|undef\)\>" skip="\\$" end="$" keepend contains=ALLBUT,@preprocPreProcGroup,@Spell
 syn region	preprocPreProc		matchgroup=preprocPreProc start="^\s*\%(%:\|#\)\s*\(pragma\>\|line\>\|warning\>\|warn\>\|error\>\)" skip="\\$" end="$" keepend contains=ALLBUT,@preprocPreProcGroup,@Spell
 
-syn region	preprocPreCondit	start="^\s*\(%:\|#\)\s*\(if\|ifdef\|ifndef\|elif\)\>" skip="\\$" end="$" end="//"me=s-1 contains=preprocCommentError
+syn region	preprocPreCondit	start="^\s*\(%:\|#\)\s*\(if\|ifdef\|ifndef\|elif\)\>" skip="\\$" end="$" keepend contains=preprocCommentError
 syn match	preprocPreCondit	display "^\s*\(%:\|#\)\s*\(else\|endif\)\>"
 
 if ! exists('preproc_no_comments') && ! s:AlreadyHasCComments()
@@ -99,7 +104,7 @@ if ! exists('preproc_no_if0')
     else
 	syn region	preprocCppOut		start="^\s*\(%:\|#\)\s*if\s\+0\+\>" end=".\@=\|$" contains=preprocCppOut2
     endif
-    syn region	preprocCppOut2	contained start="^\s*\(%:\|#\)\s*if\s\+\zs0" end="^\s*\(%:\|#\)\s*\(endif\>\|else\>\|elif\>\)" contains=preprocCppSkip
+    syn region	preprocCppOut2	contained start="0" end="^\s*\(%:\|#\)\s*\(endif\>\|else\>\|elif\>\)" contains=preprocCppSkip
     syn region	preprocCppSkip	contained start="^\s*\(%:\|#\)\s*\(if\>\|ifdef\>\|ifndef\>\)" skip="\\$" end="^\s*\(%:\|#\)\s*endif\>" contains=preprocCppSkip
 endif
 
