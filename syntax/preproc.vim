@@ -2,44 +2,17 @@
 " Language:	C preprocessor syntax on top of c, cpp, ...
 " Maintainer:	Ingo Karkat <ingo@karkat.de>
 "
-" DESCRIPTION:
-"   This syntax extension highlights C preprocessor directives and (optionally)
-"   folds preprocessor conditions. 
+" Copyright: (C) 2010-2016 Ingo Karkat
+"   The VIM LICENSE applies to this script; see ':help copyright'.
 "
-" USAGE:
-"   To add the highlighting to the file's existing syntax, use: 
-"	:setf <C-R>=&filetype<CR>.preproc
-"
-" CONFIGURATION:
-"   C/C++-style comments are typically removed by the preprocessor and thus
-"   highlighted as other comments. You can define a different highlighting if
-"   you want to visually distinguish them from the default comments of that
-"   filetype: 
-"	hi link preprocComment NonText
-"   Or turn highlighting of comments off: 
-"	let preproc_no_comments = 1
-"   Multi-line C-style comments are folded; if you do not want this, use: 
-"	let preproc_no_comment_fold = 1
-"
-"   To turn off folding of #if ... #endif conditions, use: 
-"	:let preproc_no_fold_conditions = 1
-"   Lines commented out via #if 0 will still be folded. To turn that of, too,
-"   use: 
-"	:let preproc_no_if0_fold = 1
-"   To completely turn off highlighting (as comments) of #if 0 blocks, use: 
-"	:let preproc_no_if0 = 1
-"
-" NOTES:
-"   This script supports both the normal "#..." syntax as well as the
-"   alternative "%:..." digraph (or alternative token) for the '#' punctuator. 
-"
-" REVISION	DATE		REMARKS 
+" REVISION	DATE		REMARKS
+"   1.00.004	17-Nov-2016	Prepare for publishing.
 "	003	10-Feb-2011	BUG: No comment highlighting of #if 0 block.
 "				Fixed by syncing with syntax/c.vim from 2009 Nov
-"				17. 
+"				17.
 "				FIX: Syncing also found double "end=" in
-"				preprocPreCondit. 
-"	002	25-Mar-2010	Added highlighting preprocessor comments. 
+"				preprocPreCondit.
+"	002	25-Mar-2010	Added highlighting preprocessor comments.
 "	001	24-Mar-2010	file creation
 
 if exists('b:current_syntax') && b:current_syntax =~# 'preproc'
@@ -50,13 +23,13 @@ function! s:AlreadyHasCComments()
     let l:commentGroup = 'cComment'
 
     " Quickly check with hlexists() whether the "cComment" syntax group exists
-    " globally. 
+    " globally.
     if hlexists(l:commentGroup)
 	" Existence of the syntax group is necessary, but not yet sufficient,
 	" since this query is global, and the group could have been loaded by
 	" another buffer. To check whether this file's syntax includes the
 	" syntax group, we need to check the output of :syntax, as
-	" :syntax list {group-name} also shows non-active groups. 
+	" :syntax list {group-name} also shows non-active groups.
 	redir => l:syntaxGroupsOutput
 	silent! syn list
 	redir END
@@ -64,7 +37,7 @@ function! s:AlreadyHasCComments()
 	let l:syntaxGroups = split(l:syntaxGroupsOutput, "\n")
 	let l:commentGroups = filter(l:syntaxGroups, "v:val =~# '^\\V" . escape(l:commentGroup, '\') . "'")
 	if ! empty(l:commentGroups)
-	    " The syntax group is used in the current filetype. 
+	    " The syntax group is used in the current filetype.
 "****D echomsg '**** C/C++ style comments already defined'
 	    return 1
 	endif
@@ -79,7 +52,7 @@ syn match	preprocInclude	display "^\s*\%(%:\|#\)\s*include\>\s*["<]" contains=pr
 syn cluster	preprocPreProcGroup	contains=preprocIncluded,preprocInclude,preprocDefine
 
 " Use matchgroup here to have the preprocessor directive always highlighted as
-" such, regardless of any native matching after that. 
+" such, regardless of any native matching after that.
 syn region	preprocDefine		matchgroup=preprocDefine start="^\s*\%(%:\|#\)\s*\(define\|undef\)\>" skip="\\$" end="$" keepend contains=ALLBUT,@preprocPreProcGroup,@Spell
 syn region	preprocPreProc		matchgroup=preprocPreProc start="^\s*\%(%:\|#\)\s*\(pragma\>\|line\>\|warning\>\|warn\>\|error\>\)" skip="\\$" end="$" keepend contains=ALLBUT,@preprocPreProcGroup,@Spell
 
